@@ -44,7 +44,7 @@ class TaskQueue
         {
             _tasks.pop();
         }
-        _cv.notify_one();
+        // The worker will just wake up, see the empty queue, and continue waiting.
     }
 
   private:
@@ -61,17 +61,14 @@ class TaskQueue
             std::function<void()> task;
             {
                 std::unique_lock<std::mutex> lock(_mtx);
+                // Wait until there is a task or shutdown signal
+                // return false will cause the thread to sleep until notified
                 _cv.wait(lock, [&] { return !_tasks.empty() || _shutdown; });
 
                 if(_shutdown)
                 {
                     std::cout << "Worker thread shutting down...\n";
                     break;
-                }
-
-                if(_tasks.empty())
-                {
-                    continue; // No tasks to process
                 }
 
                 task = std::move(_tasks.front());
@@ -122,11 +119,13 @@ int main()
     queue.clear(); // Clear the queue
 
     std::cout << "Pushing Task " << i << "\n";
-    queue.pushTask([] {  
-        std::cout << "Starting doing some work...\n";
-        std::this_thread::sleep_for(6s);
-        std::cout << "Completed the work\n";
-    });
+    queue.pushTask(
+        []
+        {
+            std::cout << "Starting doing some work...\n";
+            std::this_thread::sleep_for(6s);
+            std::cout << "Completed the work\n";
+        });
     i++;
 
     for(auto& name : {"David", "Edward", "Frank"})
