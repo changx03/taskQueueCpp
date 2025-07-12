@@ -121,6 +121,14 @@ int main()
 
     queue.clear(); // Clear the queue
 
+    std::cout << "Pushing Task " << i << "\n";
+    queue.pushTask([] {  
+        std::cout << "Starting doing some work...\n";
+        std::this_thread::sleep_for(6s);
+        std::cout << "Completed the work\n";
+    });
+    i++;
+
     for(auto& name : {"David", "Edward", "Frank"})
     {
         std::this_thread::sleep_for(1s);
